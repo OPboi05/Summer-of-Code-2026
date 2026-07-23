@@ -4,9 +4,9 @@ import filters
 
 choices = []
 for i in range(50,len(arr)): # I start from 50 to give EMA, RSI etc enough run-up
-    if (signal(aud,i) and RSI(aud,i)>=70):
+    if (signal(aud,i)==1 and RSI(aud,i)>=70):
         choices.append("BUY")
-    elif (signal(aud,i) and RSS(aud,i)<=30):
+    elif (signal(aud,i)==-1 and RSI(aud,i)<=30):
         choices.append("SELL")
     else:
         choices.append("HOLD")
