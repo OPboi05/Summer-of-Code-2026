@@ -1,4 +1,6 @@
 import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
 data = yf.download(["AUDUSD=X", "CADUSD=X"], start="2010-01-01", end="2025-01-01")["Close"]
 data = data.dropna()
 aud = data["AUDUSD=X"].to_numpy().flatten()
@@ -18,7 +20,7 @@ pnl = 0
 print(model.summary())
 c = model.params[0]
 beta = model.params[1]
-
+# Y = beta*X + c + epsilon(Residual)
 residual = Y - beta*X - c
 plt.plot(dates,residual)
 plt.show()
@@ -28,19 +30,19 @@ print("p-value:", result1[1])
 print("Critical Values:")
 for key, value in result1[4].items():
     print(f"   {key}: {value}") 
-# The resiudal is indeed stationary ! 
+# The resiudal is indeed stationary !  
+# we run regression between y_t - y_t-1 and y_t-1 
 x = residual[1:] #[s_1, s_2, ... ]
 y = residual[:-1] #[s_0, s_1, s_2, ... ]
 temp = y.copy() # s_{t-1} 
-y -= x
-y *= -1
+y = x - y
 x_with_constant = sm.add_constant(temp)
 model1 = sm.OLS(y,x_with_constant).fit()
-theta = model1.params[1]
-half_life = (-(np.log(2))/np.log(1+theta))
+theta = -model1.params[1]
+half_life = np.log(2)/theta
 print(half_life)
 print(model1.summary())
-half_life = int(half_life)+1
+half_life = max(2,int(round(half_life)))
 lookback = half_life
 in_trade = False
 cad_cash = 0
@@ -51,7 +53,7 @@ entry_aud = 0
 prev_sign = 1
 for i in range(lookback,arr.shape[0]):
     mean = np.mean(residual[(i-lookback):(i)])
-    std_dev = np.std(residual[(i-lookback):(i)])
+    std_dev = np.std(residual[(i-lookback):(i)],ddof=1)
     Z = (residual[i] - mean)/(std_dev) if std_dev!= 0 else 0
     arr[i] = arr[i-1]
     if in_trade:
